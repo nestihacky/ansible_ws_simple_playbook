@@ -1,0 +1,26 @@
+---
+- hosts: all
+  vars:
+    greeting: Hello!
+
+  tasks:
+    # don't do this ...
+    - name: disable selinux
+      selinux: policy=targeted state=permissive
+
+    - name: make sure apache is installed
+      yum: name=httpd state=present
+
+    - name: configure apache to listen on nonstandard port
+      lineinfile: dest=/etc/httpd/conf/httpd.conf regexp="^Listen " line="Listen 8000" backup=yes
+      notify: restart httpd
+
+    - name: make sure apache is started and will be run at boot
+      service: name=httpd state=started enabled=yes
+
+    - name: copy our page to document root
+      template: src=index.html.j2 dest=/var/www/html/index.html
+
+  handlers:
+    - name: restart httpd
+      service: name=httpd state=restarted
